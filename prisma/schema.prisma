@@ -4,10 +4,174 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
+ 
 }
 
 datasource db {
   provider = "postgresql"
+  
+}
+
+
+
+// ============================================
+// USER MODEL
+// ============================================
+
+model User {
+
+  id              String           @id @default(uuid())
+
+  name            String
+
+  email           String           @unique
+
+  password        String
+
+  role            UserRole
+
+  // Relationships
+  quotes          Quote[]
+
+  reviews         Review[]
+
+  installations   Installation[]
+
+  createdAt       DateTime         @default(now())
+}
+
+// ============================================
+// COMPANY MODEL
+// ============================================
+
+model Company {
+
+  id              String           @id @default(uuid())
+
+  name            String
+
+  location        String
+
+  description     String
+
+  // Relationships
+  products        Product[]
+
+  quotes          Quote[]
+
+  reviews         Review[]
+
+  installations   Installation[]
+
+  createdAt       DateTime         @default(now())
+}
+
+// ============================================
+// PRODUCT MODEL
+// ============================================
+
+model Product {
+
+  id              String           @id @default(uuid())
+
+  name            String
+
+  price           Float
+
+  description     String
+
+  companyId       String
+
+  // Relationship
+  company         Company          @relation(fields: [companyId], references: [id])
+
+  createdAt       DateTime         @default(now())
+}
+
+// ============================================
+// QUOTE MODEL
+// ============================================
+
+model Quote {
+
+  id              String           @id @default(uuid())
+
+  message         String
+
+  status          QuoteStatus
+
+  userId          String
+
+  companyId       String
+
+  // Relationships
+  user            User             @relation(fields: [userId], references: [id])
+
+  company         Company          @relation(fields: [companyId], references: [id])
+
+  createdAt       DateTime         @default(now())
+}
+
+// ============================================
+// REVIEW MODEL
+// ============================================
+
+model Review {
+
+  id              String           @id @default(uuid())
+
+  rating          Int
+
+  comment         String
+
+  userId          String
+
+  companyId       String
+
+  // Relationships
+  user            User             @relation(fields: [userId], references: [id])
+
+  company         Company          @relation(fields: [companyId], references: [id])
+
+  createdAt       DateTime         @default(now())
+}
+
+// ============================================
+// INSTALLATION MODEL
+// ============================================
+
+model Installation {
+
+  id                  String        @id @default(uuid())
+
+  address             String
+
+  installationDate    DateTime
+
+  userId              String
+
+  companyId           String
+
+  // Relationships
+  user                User          @relation(fields: [userId], references: [id])
+
+  company             Company       @relation(fields: [companyId], references: [id])
+
+  createdAt           DateTime      @default(now())
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserRole {
+  CUSTOMER
+  COMPANY
+}
+
+enum QuoteStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
