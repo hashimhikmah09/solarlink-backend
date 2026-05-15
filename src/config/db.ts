@@ -1,18 +1,32 @@
-import { PrismaClient } from "@prisma/client";
-import "dotenv/config";
+// 1. ALWAYS load environment variables first!
+import "dotenv/config"; 
 
-const prisma = new PrismaClient();
+// 2. Standard imports
+import { PrismaClient } from "@prisma/client";
+import { Pool } from "pg";
+import { PrismaPg } from "@prisma/adapter-pg";
+
+// 3. Setup the PostgreSQL Connection Pool
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+// 4. Bind the PG driver adapter to Prisma Client
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 export { prisma };
 
 /**
- * Connect DB (Prisma doesn't require manual connect,
- * but we keep it for consistency/logging)
+ * Connect DB (Prisma 7 driver adapters manage their own pools, 
+ * but checking a client query ensures a valid connection)
  */
 export const connectDB = async () => {
   try {
-    await prisma.$connect();
-    console.log("✅ Database connected successfully");
+    // Using a raw query check instead of $connect is more reliable 
+    // when using driver adapters like PrismaPg
+    await prisma.$queryRaw`SELECT 1`;
+    console.log("✅ Database connected successfully via Driver Adapter");
   } catch (error) {
     console.error("❌ Database connection failed:", error);
     process.exit(1);
@@ -20,8 +34,14 @@ export const connectDB = async () => {
 };
 
 /**
- * Disconnect DB safely
+ * Disconnect DB safely by closing the Prisma Client and the PG Pool
  */
 export const disconnectDB = async () => {
-  await prisma.$disconnect();
+  try {
+    await prisma.$disconnect();
+    await pool.end(); // Cleanly close the underlying PG pool connections
+    console.log("👋 Database disconnected cleanly");
+  } catch (error) {
+    console.error("❌ Error while disconnecting database:", error);
+  }
 };

@@ -2,9 +2,8 @@ import jwt from "jsonwebtoken";
 
 import type { Request, Response, NextFunction } from "express";
 
-import { PrismaClient } from "../../generated/prisma/client.js";
+import { prisma } from "../config/db.js"; 
 
-const prisma = new PrismaClient(undefined as any);
 
 /**
  * Protect Routes Middleware

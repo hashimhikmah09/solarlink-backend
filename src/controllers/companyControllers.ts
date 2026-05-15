@@ -130,7 +130,7 @@ export const addProduct = async (req: Request, res: Response) => {
 
     // Check company exists
     const company = await prisma.company.findUnique({
-      where: { id: companyId },
+      where: { id: companyId as string },
     });
 
     if (!company) {

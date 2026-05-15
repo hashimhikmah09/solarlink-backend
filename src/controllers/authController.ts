@@ -1,9 +1,9 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-
 import type { Request, Response } from "express";
 
-import { PrismaClient } from "../../generated/prisma/client.js";
+// 1. IMPORT YOUR CONFIGURED CLIENT INSTANCE (Adjust path if needed)
+import { prisma } from "../config/db.js"; 
 
 import {
   registerSchema,
@@ -15,7 +15,7 @@ import {
   generateRefreshToken,
 } from "../utils/generateToken.js";
 
-const prisma = new PrismaClient(undefined as any);
+// ❌ REMOVED: const prisma = new PrismaClient(undefined as any);
 
 /**
  * ==========================================
@@ -23,32 +23,19 @@ const prisma = new PrismaClient(undefined as any);
  * POST /api/auth/register
  * ==========================================
  */
-export const register = async (
-  req: Request,
-  res: Response
-) => {
-
+export const register = async (req: Request, res: Response) => {
   try {
-
     // Validate request body
     const validatedData = registerSchema.parse(req.body);
 
-    const {
-      name,
-      email,
-      password,
-      role,
-    } = validatedData;
+    const { name, email, password, role } = validatedData;
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: {
-        email,
-      },
+      where: { email },
     });
 
     if (existingUser) {
-
       return res.status(409).json({
         success: false,
         message: "User already exists",
@@ -56,10 +43,7 @@ export const register = async (
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(
-      password,
-      10
-    );
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
     const user = await prisma.user.create({
@@ -73,36 +57,27 @@ export const register = async (
 
     // Generate tokens
     const accessToken = generateAccessToken(user.id);
-
     const refreshToken = generateRefreshToken(user.id);
 
     // Save refresh token
     await prisma.user.update({
-      where: {
-        id: user.id,
-      },
-      data: {
-        refreshToken,
-      },
+      where: { id: user.id },
+      data: { refreshToken },
     });
 
     res.status(201).json({
       success: true,
       message: "User registered successfully",
-
       data: {
         id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,
-
         accessToken,
         refreshToken,
       },
     });
-
   } catch (error: any) {
-
     res.status(400).json({
       success: false,
       message: error.errors?.[0]?.message || "Invalid input",
@@ -116,30 +91,19 @@ export const register = async (
  * POST /api/auth/login
  * ==========================================
  */
-export const login = async (
-  req: Request,
-  res: Response
-) => {
-
+export const login = async (req: Request, res: Response) => {
   try {
-
     // Validate request
     const validatedData = loginSchema.parse(req.body);
 
-    const {
-      email,
-      password,
-    } = validatedData;
+    const { email, password } = validatedData;
 
     // Find user
     const user = await prisma.user.findUnique({
-      where: {
-        email,
-      },
+      where: { email },
     });
 
     if (!user) {
-
       return res.status(401).json({
         success: false,
         message: "Invalid credentials",
@@ -147,14 +111,9 @@ export const login = async (
     }
 
     // Compare password
-    const isPasswordCorrect =
-      await bcrypt.compare(
-        password,
-        user.password
-      );
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
 
     if (!isPasswordCorrect) {
-
       return res.status(401).json({
         success: false,
         message: "Invalid credentials",
@@ -162,39 +121,28 @@ export const login = async (
     }
 
     // Generate JWT tokens
-    const accessToken =
-      generateAccessToken(user.id);
-
-    const refreshToken =
-      generateRefreshToken(user.id);
+    const accessToken = generateAccessToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
 
     // Save refresh token
     await prisma.user.update({
-      where: {
-        id: user.id,
-      },
-      data: {
-        refreshToken,
-      },
+      where: { id: user.id },
+      data: { refreshToken },
     });
 
     res.status(200).json({
       success: true,
       message: "Login successful",
-
       data: {
         id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,
-
         accessToken,
         refreshToken,
       },
     });
-
   } catch (error: any) {
-
     res.status(400).json({
       success: false,
       message: error.errors?.[0]?.message || "Invalid input",
@@ -208,17 +156,11 @@ export const login = async (
  * POST /api/auth/refresh
  * ==========================================
  */
-export const refresh = async (
-  req: Request,
-  res: Response
-) => {
-
+export const refresh = async (req: Request, res: Response) => {
   try {
-
     const { refreshToken } = req.body;
 
     if (!refreshToken) {
-
       return res.status(401).json({
         success: false,
         message: "Refresh token missing",
@@ -233,20 +175,14 @@ export const refresh = async (
 
     // Find user
     const user = await prisma.user.findUnique({
-      where: {
-        id: decoded.id,
-      },
+      where: { id: decoded.id },
       select: {
         id: true,
         refreshToken: true,
       },
     });
 
-    if (
-      !user ||
-      user.refreshToken !== refreshToken
-    ) {
-
+    if (!user || user.refreshToken !== refreshToken) {
       return res.status(401).json({
         success: false,
         message: "Invalid refresh token",
@@ -254,17 +190,13 @@ export const refresh = async (
     }
 
     // Generate new access token
-    const accessToken =
-      generateAccessToken(user.id);
+    const accessToken = generateAccessToken(user.id);
 
     res.status(200).json({
       success: true,
-
       accessToken,
     });
-
   } catch (error) {
-
     res.status(401).json({
       success: false,
       message: "Invalid refresh token",
