@@ -1,19 +1,24 @@
 import { z } from "zod";
 
-/**
- * Add Product Schema
- */
-export const createProductSchema = z.object({
 
-  name: z
-    .string()
-    .min(2, "Product name is required"),
+// Add Company Schema to validator
+ 
+export const addCompanySchema = z.object({
+  ownerId: z.string().uuid().optional(),
+  name: z.string(),
+  location: z.string(),
+  description: z.string(),
+});
 
-  price: z
-    .number()
-    .positive("Price must be positive"),
 
-  description: z
-    .string()
-    .min(5, "Description is required"),
+//Update Company Schema to validator
+export const updateCompanySchema = z.object({
+  name: z.string().optional(),
+  location: z.string().optional(),
+  description: z.string(),
+});
+
+//delete company schema
+export const deleteCompanySchema = z.object({
+  id: z.string().uuid(),
 });

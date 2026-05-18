@@ -8,7 +8,7 @@ import { prisma } from "../config/db.js";
 /**
  * Protect Routes Middleware
  */
-export const protect = async (
+export const authMiddleware = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -19,18 +19,20 @@ export const protect = async (
     let token: string | undefined;
 
     // Check Authorization Header
+    const authHeader = req.headers.authorization;
+    // console.log("Authorization header:", authHeader);
     if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer")
+      authHeader &&
+      authHeader.startsWith("Bearer")
     ) {
 
-      token =
-        req.headers.authorization.split(" ")[1];
+      token = authHeader.split(" ")[1];
+      // console.log("Token extracted from header:", token);
+      
     }
 
     // No token
     if (!token) {
-
       return res.status(401).json({
         success: false,
         message: "Not authorized",
@@ -67,7 +69,7 @@ export const protect = async (
 
     res.status(401).json({
       success: false,
-      message: "Invalid token",
+      message: "Invalid token: " + (error instanceof Error ? error.message : "Unknown error"),
     });
   }
 };

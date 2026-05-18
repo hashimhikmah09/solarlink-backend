@@ -12,10 +12,9 @@ import {
 
 import {
   generateAccessToken,
-  generateRefreshToken,
 } from "../utils/generateToken.js";
 
-// ❌ REMOVED: const prisma = new PrismaClient(undefined as any);
+
 
 /**
  * ==========================================
@@ -56,31 +55,20 @@ export const register = async (req: Request, res: Response) => {
     });
 
     // Generate tokens
-    const accessToken = generateAccessToken(user.id);
-    const refreshToken = generateRefreshToken(user.id);
+    const accessToken = generateAccessToken({ id: user.id, res });
 
-    // Save refresh token
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { refreshToken },
-    });
+    // 🚫 Never return password
+    const { password: _, ...safeUser } = user;
 
-    res.status(201).json({
-      success: true,
-      message: "User registered successfully",
-      data: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
+    return res.status(201).json({
+        status: "success",
+        data: safeUser,
         accessToken,
-        refreshToken,
-      },
     });
   } catch (error: any) {
-    res.status(400).json({
+    res.status(500).json({
       success: false,
-      message: error.errors?.[0]?.message || "Invalid input",
+      message: error.message,
     });
   }
 };
@@ -121,85 +109,20 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Generate JWT tokens
-    const accessToken = generateAccessToken(user.id);
-    const refreshToken = generateRefreshToken(user.id);
+    const accessToken = generateAccessToken({ id: user.id, res });
 
-    // Save refresh token
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { refreshToken },
-    });
+ // 🚫 Never return password
+    const { password: _, ...safeUser } = user;
 
-    res.status(200).json({
-      success: true,
-      message: "Login successful",
-      data: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
+    return res.status(201).json({
+        status: "success",
+        data: safeUser,
         accessToken,
-        refreshToken,
-      },
     });
   } catch (error: any) {
-    res.status(400).json({
+    res.status(500).json({
       success: false,
-      message: error.errors?.[0]?.message || "Invalid input",
-    });
-  }
-};
-
-/**
- * ==========================================
- * REFRESH TOKEN
- * POST /api/auth/refresh
- * ==========================================
- */
-export const refresh = async (req: Request, res: Response) => {
-  try {
-    const { refreshToken } = req.body;
-
-    if (!refreshToken) {
-      return res.status(401).json({
-        success: false,
-        message: "Refresh token missing",
-      });
-    }
-
-    // Verify token
-    const decoded = jwt.verify(
-      refreshToken,
-      process.env.JWT_REFRESH_SECRET as string
-    ) as { id: string };
-
-    // Find user
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-      select: {
-        id: true,
-        refreshToken: true,
-      },
-    });
-
-    if (!user || user.refreshToken !== refreshToken) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid refresh token",
-      });
-    }
-
-    // Generate new access token
-    const accessToken = generateAccessToken(user.id);
-
-    res.status(200).json({
-      success: true,
-      accessToken,
-    });
-  } catch (error) {
-    res.status(401).json({
-      success: false,
-      message: "Invalid refresh token",
+      message: error.message,
     });
   }
 };

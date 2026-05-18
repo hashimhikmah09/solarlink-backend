@@ -1,35 +1,24 @@
 import express from "express";
+import { authMiddleware } from "../middleware/authMiddleware.js";
+import { validateRequest } from "../middleware/validateRequest.js";
+import { addCompanySchema, deleteCompanySchema, updateCompanySchema } from "../validations/companyValidation.js";
+import { addCompany, updateCompany,deleteCompany } from "../controllers/companyControllers.js";
 
-import {
-  getCompanies,
-  getCompanyById,
-  addProduct,
-} from "../controllers/companyControllers.js";
-
-import {
-  protect,
-} from "../middleware/authMiddleware.js";
 
 const router = express.Router();
+router.use(authMiddleware);
 
-/**
- * GET All Companies
- */
-router.get("/", getCompanies);
+router.post("/", validateRequest(addCompanySchema), addCompany);  
 
-/**
- * GET Single Company
- */
-router.get("/:id", getCompanyById);
 
-/**
- * POST Add Product
- * Private Route
- */
-router.post(
-  "/:id/products",
-  protect,
-  addProduct
-);
+// //update company route
+router.put("/:id", validateRequest(updateCompanySchema), updateCompany);
+
+
+// // remove company route
+router.delete("/delete/:id", validateRequest(deleteCompanySchema, "params" ), deleteCompany);
+
+
+    
 
 export default router;

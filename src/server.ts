@@ -7,6 +7,8 @@ import  { connectDB, disconnectDB } from "./config/db.js";
 // Routes
 import authRoutes from "./routes/authRoute.js";
 import companyRoutes from "./routes/companyRoutes.js";
+import quoteRoutes from "./routes/quoteRoute.js";
+import reviewRoutes from "./routes/reviewRoute.js";
 
 const app = express();
 
@@ -29,9 +31,10 @@ app.get("/", (req, res) => {
 // ======================
 // API ROUTES
 // ======================
-app.use("/api/auth", authRoutes);
-app.use("/api/companies", companyRoutes);
-
+app.use("/auth", authRoutes);
+app.use("/company", companyRoutes);
+app.use("/quote", quoteRoutes);
+app.use("/review", reviewRoutes);
 // ======================
 // ERROR HANDLING (404)
 // ======================

@@ -1,182 +1,170 @@
 import type { Request, Response } from "express";
 import { prisma } from "../config/db.js";
 
-/**
- * ==========================================
- * GET ALL COMPANIES
- * Pagination + Filtering
- * ==========================================
- */
-export const getCompanies = async (req: Request, res: Response) => {
+// Company -> Products, Reviews
+// add Company
+  // steps
+  // 1. validate input
+  // 2. check if company already exists
+  // 3. create company
+  // 4. return response
+  
+// update company
+  // steps
+  // 1. validate input
+  // 2. check if company exists
+  // 3. check if user is owner of the company
+  // 4. update company
+  // 5. return response
+
+// delete company
+  // steps
+  // 1. check if company exists
+  // 2. check if user is owner of the company
+  // 3. delete company
+  // 4. return response
+
+// get all companies
+  // steps
+  // 1. get query params for pagination and filtering
+  // 2. build filters dynamically based on query params
+  // 3. fetch companies from database with filters and pagination
+  // 4. return response
+
+// get single company
+  // steps
+  // 1. validate company id
+  // 2. fetch company from database with products and reviews
+  // 3. return response
+
+
+
+// GET ALL COMPANIES
+// Pagination + Filtering
+
+//addCompany
+const addCompany = async (req: Request, res: Response) => {
   try {
-    const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
+    const { name, location, description } = req.body;
 
-    const location = req.query.location as string;
-    const serviceType = req.query.serviceType as string;
+    // // Check if company already exists
+    // const existingCompany = await prisma.company.findFirst({
+    //   where: { 
+    //     name: req.body.name,
+    //     location: req.body.location
+    //    },
+    // });
 
-    // Build filters dynamically
-    const filters: any = {};
+    // if (existingCompany) {
+    //   return res.status(400).json({ error: "Company already exists" });
+    // }
 
-    if (location) {
-      filters.location = {
-        contains: location,
-        mode: "insensitive",
-      };
-    }
-
-    if (serviceType) {
-      filters.serviceType = {
-        contains: serviceType,
-        mode: "insensitive",
-      };
-    }
-
-    const companies = await prisma.company.findMany({
-      where: filters,
-      skip,
-      take: limit,
-      include: {
-        products: true,
-        reviews: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    const total = await prisma.company.count({
-      where: filters,
-    });
-
-    return res.status(200).json({
-      success: true,
-      data: companies,
-      pagination: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    });
-  } catch (error) {
-    console.error("Get Companies Error:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch companies",
-    });
-  }
-};
-
-/**
- * ==========================================
- * GET SINGLE COMPANY
- * With Products + Reviews
- * ==========================================
- */
-export const getCompanyById = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-
-    const company = await prisma.company.findUnique({
-      where: { id },
-      include: {
-        products: true,
-        reviews: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    if (!company) {
-      return res.status(404).json({
-        success: false,
-        message: "Company not found",
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      data: company,
-    });
-  } catch (error) {
-    console.error("Get Company Error:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch company",
-    });
-  }
-};
-
-/**
- * ==========================================
- * ADD PRODUCT (COMPANY OWNER ONLY)
- * ==========================================
- */
-export const addProduct = async (req: Request, res: Response) => {
-  try {
-    const { id: companyId } = req.params;
-    const { name, price, description } = req.body;
-
-    // Check company exists
-    const company = await prisma.company.findUnique({
-      where: { id: companyId as string },
-    });
-
-    if (!company) {
-      return res.status(404).json({
-        success: false,
-        message: "Company not found",
-      });
-    }
-
-    // Ensure user is logged in
-    if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized",
-      });
-    }
-
-    // Ownership check
-    if (company.ownerId !== req.user.id) {
-      return res.status(403).json({
-        success: false,
-        message: "You are not allowed to add products to this company",
-      });
-    }
-
-    // Create product
-    const product = await prisma.product.create({
-      data: {
-        name,
-        price: Number(price),
+    // Create company
+    const company = await prisma.company.create({
+      data: { 
+        name, 
+        location, 
         description,
-        companyId,
+        ownerId: req.user.id, // Assuming req.user is set by auth middleware
       },
     });
 
-    return res.status(201).json({
-      success: true,
-      message: "Product added successfully",
-      data: product,
+    const  { ownerId: _, ...safeCompany } = company; // remove ownerId from the response
+    res.status(201).json({ 
+      "success": true,
+      "data": safeCompany
     });
-  } catch (error) {
-    console.error("Add Product Error:", error);
 
-    return res.status(500).json({
+  } catch (error : any) {
+    console.error("Error adding company:", error);
+    if (error.code === "P2002") {
+    return res.status(409).json({
       success: false,
-      message: "Failed to add product",
+      message: "Company already exists",
     });
   }
+    res.status(500).json({ error: "Internal server error" + (error instanceof Error ? error.message : "Unknown error") });
+  }
 };
+
+
+//updateCompany
+// update company
+  // steps
+  // 1. validate input
+  // 2. check if company exists
+  // 3. check if user is owner of the company
+  // 4. update company
+  // 5. return response
+
+const updateCompany = async (req: Request, res: Response) => {
+  try {
+    const companyId = req.params.id as string;
+    const { name, location, description } = req.body;
+
+    // Check if company exists
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+    });
+
+    if (!company) {
+      return res.status(404).json({ error: "Company not found" });
+    }
+
+    // Check if user is owner of the company
+    if (company.ownerId !== req.user.id) {
+      return res.status(403).json({ error: "You are not the owner of this company" });
+    }
+
+    // Update company
+    const updatedCompany = await prisma.company.update({
+      where: { id: companyId },
+      data: { name, location, description },
+    });
+
+    res.json({ success: true, data: updatedCompany });
+  } catch (error : any) {
+    console.error("Error updating company:", error);
+    res.status(500).json({ error: "Internal server error" + (error instanceof Error ? error.message : "Unknown error") });
+  }
+};
+
+
+// delete company
+  // steps
+  // 1. check if company exists
+  // 2. check if user is owner of the company
+  // 3. delete company
+  // 4. return response
+
+  const deleteCompany = async (req: Request, res: Response) => {
+    try {
+      const companyId = req.params.id as string;  
+      
+      //check if company exists
+      const company = await prisma.company.findUnique({
+        where: { id: companyId },
+      });
+
+      if (!company) {
+        return res.status(404).json({ error: "Company not found" });
+      }
+
+      // Check if user is owner of the company
+      if (company.ownerId !== req.user.id) {
+        return res.status(403).json({ error: "You are not the owner of this company" });
+      }
+
+      // Delete company
+      await prisma.company.delete({
+        where: { id: companyId },
+      });
+
+      res.json({ success: true, message: "Company deleted successfully" });
+    } catch (error : any) {
+      console.error("Error deleting company:", error);
+      res.status(500).json({ error: "Internal server error" + (error instanceof Error ? error.message : "Unknown error") });
+    }
+  };
+
+export { addCompany, updateCompany, deleteCompany };

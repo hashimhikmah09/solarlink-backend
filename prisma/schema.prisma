@@ -38,6 +38,8 @@ model User {
 
   installations   Installation[]
 
+  companiesOwned  Company[]
+
   createdAt       DateTime         @default(now())
 }
 
@@ -48,23 +50,22 @@ model User {
 model Company {
 
   id              String           @id @default(uuid())
-
   name            String
-
   location        String
-
   description     String
+  ownerId     String
+  owner       User      @relation(fields: [ownerId], references: [id])
+   rating      Float  @default(0)
 
   // Relationships
   products        Product[]
-
   quotes          Quote[]
-
   reviews         Review[]
-
   installations   Installation[]
 
   createdAt       DateTime         @default(now())
+
+  @@unique([name, location])
 }
 
 // ============================================
@@ -74,13 +75,9 @@ model Company {
 model Product {
 
   id              String           @id @default(uuid())
-
   name            String
-
   price           Float
-
   description     String
-
   companyId       String
 
   // Relationship
@@ -96,22 +93,23 @@ model Product {
 model Quote {
 
   id              String           @id @default(uuid())
-
-  message         String
-
-  status          QuoteStatus
-
+  // quote details
+  systemSize  String
+  address     String
+  energyNeeds String
+  budget      Float
+  //quote status 
+  status      QuoteStatus @default(PENDING)
+//customer relationship
   userId          String
-
-  companyId       String
-
-  // Relationships
   user            User             @relation(fields: [userId], references: [id])
-
+//company Relationship
+  companyId       String
   company         Company          @relation(fields: [companyId], references: [id])
-
   createdAt       DateTime         @default(now())
 }
+
+
 
 // ============================================
 // REVIEW MODEL
@@ -119,22 +117,20 @@ model Quote {
 
 model Review {
 
-  id              String           @id @default(uuid())
-
+  id              String           @id @default(cuid())
   rating          Int
-
-  comment         String
-
+  comment         String?
   userId          String
-
   companyId       String
 
   // Relationships
   user            User             @relation(fields: [userId], references: [id])
-
   company         Company          @relation(fields: [companyId], references: [id])
 
   createdAt       DateTime         @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, companyId]) // 🚨 prevents duplicate reviews
 }
 
 // ============================================
