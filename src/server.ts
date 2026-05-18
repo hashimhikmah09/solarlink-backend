@@ -1,7 +1,8 @@
 import express from "express";
 import "dotenv/config";
-
+import { initializeSocket } from "./socket/socket.js";
 import  { connectDB, disconnectDB } from "./config/db.js";
+import http from "http";
 
 
 // Routes
@@ -10,6 +11,8 @@ import companyRoutes from "./routes/companyRoutes.js";
 import quoteRoutes from "./routes/quoteRoute.js";
 import reviewRoutes from "./routes/reviewRoute.js";
 import uploadRoutes from "./routes/uploadRoute.js";
+import notificationRoutes from "./routes/notificationRoute.js";
+import searchRoutes from "./routes/searchRoute.js";
 
 const app = express();
 
@@ -37,6 +40,8 @@ app.use("/company", companyRoutes);
 app.use("/quote", quoteRoutes);
 app.use("/review", reviewRoutes);
 app.use("/upload", uploadRoutes); // file upload route
+app.use("/notifications", notificationRoutes); // notification routes
+app.use("/search", searchRoutes); // search route
 // ======================
 // ERROR HANDLING (404)
 // ======================
@@ -47,12 +52,16 @@ app.use((req, res) => {
   });
 });
 
+const server = http.createServer(app);
+
+initializeSocket(server);
+
 // ======================
 // START SERVER
 // ======================
 const PORT = process.env.PORT || 5000;
 
-const server = app.listen(PORT, async () => {
+server.listen(PORT, async () => {
   await connectDB();
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
@@ -88,3 +97,5 @@ process.on("SIGTERM", async () => {
     process.exit(0);
   });
 });
+
+export default app;

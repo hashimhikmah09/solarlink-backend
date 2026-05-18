@@ -2,6 +2,9 @@ import type { Request, Response } from "express";
 import { prisma } from "../config/db.js";
 import EventEmitter from "events";
 import type { $Enums } from "@prisma/client";
+import { createNotification } from "../utils/NotificationHelper.js";
+import { sendEmail } from "../utils/sendEmail.js";
+import { io } from "../socket/socket.js";
 
 //CREATE QUOTE
 
@@ -147,6 +150,7 @@ export const updateQuoteStatus = async (req: Request, res: Response) => {
       where: { id: quoteId },
       include: {
         company: true,
+        user: true,
       },
     });
     if (!quote) {
@@ -168,6 +172,28 @@ export const updateQuoteStatus = async (req: Request, res: Response) => {
       where: { id: quoteId },
       data: { status },
     });
+
+//Notification logic. save notification to db
+    await createNotification({
+      userId: quote.userId,
+      title: "Quote Updated",
+      message: `Your quote status is now ${status}`,
+      type: "QUOTE_UPDATE",
+    });
+ // Send email
+    await sendEmail(
+      quote.user.email,
+      "Quote Updated",
+      `Your quote is now ${status}`
+    );
+        //socket notification will be handled by the event emitter and listener in the socket file
+
+    io.emit("notification", {
+      userId: quote.userId,
+      title: "Quote Updated",
+      message: `Your quote status is now ${status}`,
+    });
+   
     // Emit notification event
     notificationEmitter.emit("quoteStatusUpdated", {
       quoteId,

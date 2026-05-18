@@ -1,0 +1,14 @@
+
+//Notification testing order
+
+Company updates quote
+        ↓
+Quote status changes
+        ↓
+Notification saved in DB
+        ↓
+Email sent
+        ↓
+Realtime event emitted
+        ↓
+User sees alert instantly
