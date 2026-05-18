@@ -55,7 +55,9 @@ model Company {
   description     String
   ownerId     String
   owner       User      @relation(fields: [ownerId], references: [id])
-   rating      Float  @default(0)
+  rating      Float  @default(0)
+  logo        String?
+  
 
   // Relationships
   products        Product[]
@@ -79,6 +81,7 @@ model Product {
   price           Float
   description     String
   companyId       String
+  image     String? 
 
   // Relationship
   company         Company          @relation(fields: [companyId], references: [id])
@@ -148,6 +151,7 @@ model Installation {
   userId              String
 
   companyId           String
+  images              String[]      @default([])
 
   // Relationships
   user                User          @relation(fields: [userId], references: [id])

@@ -9,6 +9,7 @@ import authRoutes from "./routes/authRoute.js";
 import companyRoutes from "./routes/companyRoutes.js";
 import quoteRoutes from "./routes/quoteRoute.js";
 import reviewRoutes from "./routes/reviewRoute.js";
+import uploadRoutes from "./routes/uploadRoute.js";
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use("/auth", authRoutes);
 app.use("/company", companyRoutes);
 app.use("/quote", quoteRoutes);
 app.use("/review", reviewRoutes);
+app.use("/upload", uploadRoutes); // file upload route
 // ======================
 // ERROR HANDLING (404)
 // ======================
