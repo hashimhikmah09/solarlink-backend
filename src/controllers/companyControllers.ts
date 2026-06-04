@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { prisma } from "../config/db.js";
+import fa from "zod/v4/locales/fa.js";
 
 // Company -> Products, Reviews
 // add Company
@@ -47,17 +48,24 @@ const addCompany = async (req: Request, res: Response) => {
   try {
     const { name, location, description } = req.body;
 
-    // // Check if company already exists
-    // const existingCompany = await prisma.company.findFirst({
-    //   where: { 
-    //     name: req.body.name,
-    //     location: req.body.location
-    //    },
-    // });
-
-    // if (existingCompany) {
-    //   return res.status(400).json({ error: "Company already exists" });
+    // // Validate input
+    // if (!name || !location || description) {
+    //   return res.status(400).json({ 
+    //     success: false, message: 
+    //     "Name and location are required" });
     // }
+
+    // Check if company already exists
+    const existingCompany = await prisma.company.findFirst({
+      where: { 
+        name: req.body.name,
+        location: req.body.location
+       },
+    });
+
+    if (existingCompany) {
+      return res.status(400).json({ error: "Company already exists" });
+    }
 
     // Create company
     const company = await prisma.company.create({

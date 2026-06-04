@@ -3,6 +3,7 @@ import "dotenv/config";
 import { initializeSocket } from "./socket/socket.js";
 import  { connectDB, disconnectDB } from "./config/db.js";
 import http from "http";
+import cors from "cors";
 
 
 // Routes
@@ -13,6 +14,9 @@ import reviewRoutes from "./routes/reviewRoute.js";
 import uploadRoutes from "./routes/uploadRoute.js";
 import notificationRoutes from "./routes/notificationRoute.js";
 import searchRoutes from "./routes/searchRoute.js";
+import conversationRoutes from "./routes/conversationRoutes.js";
+import messageRoute from "./routes/messageRoute.js";
+
 
 const app = express();
 
@@ -21,7 +25,7 @@ const app = express();
 // ======================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+app.use(cors());
 // ======================
 // HEALTH CHECK ROUTE
 // ======================
@@ -42,6 +46,8 @@ app.use("/review", reviewRoutes);
 app.use("/upload", uploadRoutes); // file upload route
 app.use("/notifications", notificationRoutes); // notification routes
 app.use("/search", searchRoutes); // search route
+app.use("/conversations", conversationRoutes)//conversation routes
+app.use("/messages", messageRoute) // message routes
 // ======================
 // ERROR HANDLING (404)
 // ======================

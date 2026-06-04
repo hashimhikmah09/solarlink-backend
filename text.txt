@@ -1,0 +1,243 @@
+"use client";
+
+import {useEffect,useMemo,useState,} from "react";
+import CompanyCard from "@/src/components/companyCard";
+import dynamic from "next/dynamic";
+import { getCompanies } from "@/src/services/companyservice";
+
+const ComparisonTable = dynamic(
+  () =>
+    import(
+      "@/src/components/ComparisonTable"
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <p>Loading comparison...</p>
+    ),
+  }
+);
+
+export default function ComparePage() {
+  const [companies, setCompanies] =
+    useState<any[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [selectedCompanies, setSelectedCompanies] =
+    useState<any[]>([]);
+
+  // FILTERS
+
+  const [locationFilter, setLocationFilter] =
+    useState("");
+
+  const [serviceFilter, setServiceFilter] =
+    useState("");
+
+  const [ratingFilter, setRatingFilter] =
+    useState("");
+
+  // FETCH COMPANIES
+
+  useEffect(() => {
+    const loadCompanies = async () => {
+      try {
+        const data =
+          await getCompanies();
+
+        setCompanies(data.data);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCompanies();
+  }, []);
+
+  // FILTER LOGIC
+
+  const filteredCompanies = useMemo(() => {
+    return companies.filter((company) => {
+      const matchesLocation =
+        locationFilter === "" ||
+        company.location
+          .toLowerCase()
+          .includes(
+            locationFilter.toLowerCase()
+          );
+
+    const matchesService =
+  serviceFilter === "" ||
+  (company.description ?? "")
+    .toLowerCase()
+    .includes(
+      serviceFilter.toLowerCase()
+    );
+
+      const matchesRating =
+        ratingFilter === "" ||
+        company.rating >=
+          Number(ratingFilter);
+
+      return (
+        matchesLocation &&
+        matchesService &&
+        matchesRating
+      );
+    });
+  }, [
+    companies,
+    locationFilter,
+    serviceFilter,
+    ratingFilter,
+  ]);
+
+  // TOGGLE COMPARE
+
+  const toggleCompanySelection = (
+    company: any
+  ) => {
+    const exists =
+      selectedCompanies.some(
+        (c) => c.id === company.id
+      );
+
+    if (exists) {
+      setSelectedCompanies((prev) =>
+        prev.filter(
+          (c) => c.id !== company.id
+        )
+      );
+
+      return;
+    }
+
+    if (selectedCompanies.length >= 3) {
+      alert(
+        "You can only compare up to 3 companies"
+      );
+
+      return;
+    }
+
+    setSelectedCompanies((prev) => [
+      ...prev,
+      company,
+    ]);
+  };
+
+  // BEST MATCH
+
+  const bestMatch =
+    selectedCompanies.length > 0
+      ? selectedCompanies.reduce(
+          (best, current) => {
+            const bestScore =
+              best.rating * 2 +
+              best.installationsCompleted;
+
+            const currentScore =
+              current.rating * 2 +
+              current.installationsCompleted;
+
+            return currentScore >
+              bestScore
+              ? current
+              : best;
+          }
+        )
+      : null;
+
+  return (
+    <main className="p-8">
+      <h1 className="text-3xl font-bold mb-8">
+        Compare Companies
+      </h1>
+
+      {/* FILTERS */}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <input
+          type="text"
+          placeholder="Location"
+          value={locationFilter}
+          onChange={(e) =>
+            setLocationFilter(
+              e.target.value
+            )
+          }
+          className="border p-3 rounded-xl"
+        />
+
+        <input
+          type="text"
+          placeholder="Service"
+          value={serviceFilter}
+          onChange={(e) =>
+            setServiceFilter(
+              e.target.value
+            )
+          }
+          className="border p-3 rounded-xl"
+        />
+
+        <input
+          type="number"
+          placeholder="Minimum Rating"
+          value={ratingFilter}
+          onChange={(e) =>
+            setRatingFilter(
+              e.target.value
+            )
+          }
+          className="border p-3 rounded-xl"
+        />
+      </div>
+
+      {/* LOADING */}
+
+      {loading ? (
+        <p>Loading companies...</p>
+      ) : (
+        <>
+          {/* COMPANY GRID */}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {filteredCompanies.map(
+              (company) => (
+                <CompanyCard
+                  key={company.id}
+                  company={company}
+                  selectedCompanies={
+                    selectedCompanies
+                  }
+                  toggleCompanySelection={
+                    toggleCompanySelection
+                  }
+                  bestMatchId={
+                    bestMatch?.id
+                  }
+                />
+              )
+            )}
+          </div>
+
+          {/* COMPARISON TABLE */}
+
+          {selectedCompanies.length >
+            0 && (
+            <ComparisonTable
+              companies={
+                selectedCompanies
+              }
+            />
+          )}
+        </>
+      )}
+    </main>
+  );
+}

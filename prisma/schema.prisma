@@ -22,27 +22,24 @@ datasource db {
 model User {
 
   id              String           @id @default(uuid())
-
   name            String
-
   email           String           @unique
-
   password        String
-
   role            UserRole
 
   // Relationships
   quotes          Quote[]
-
   reviews         Review[]
-
   installations   Installation[]
-
   companiesOwned  Company[]
 
-  createdAt       DateTime         @default(now())
-
   notifications Notification[]
+  customerConversations Conversation[] @relation("CustomerConversation")
+  
+
+  sentMessages Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  createdAt       DateTime         @default(now())
 }
 
 // ============================================
@@ -66,7 +63,7 @@ model Company {
   quotes          Quote[]
   reviews         Review[]
   installations   Installation[]
-
+  companyConversations Conversation[] @relation("CompanyConversation")
   createdAt       DateTime         @default(now())
 
   @@unique([name, location])
@@ -180,6 +177,43 @@ model Notification {
   user      User @relation(fields: [userId], references: [id])
 }
 
+model Conversation {
+  id          String    @id @default(uuid())
+
+  customerId  String
+  companyId   String
+
+  customer    User      @relation("CustomerConversation", fields: [customerId], references: [id])
+  company     Company   @relation("CompanyConversation", fields: [companyId], references: [id])
+
+  messages    Message[]
+
+  createdAt   DateTime @default(now())
+}
+
+model Message {
+
+  id              String   @id @default(uuid())
+
+  senderId        String
+  receiverId      String
+
+  conversationId  String
+
+  content         String?
+
+  attachmentUrl   String?
+
+  isRead          Boolean @default(false)
+
+  createdAt       DateTime @default(now())
+  // Relationships
+  conversation    Conversation @relation( fields: [conversationId],references: [id])
+  sender          User @relation("SentMessages", fields: [senderId], references: [id])
+
+  receiver        User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+}
 // ============================================
 // ENUMS
 // ============================================
